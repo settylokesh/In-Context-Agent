@@ -9,11 +9,7 @@ export const MODELS = [
         name: 'Llama 3.3 70B Versatile',
         capabilities: []
     },
-    {
-        id: 'meta-llama/llama-guard-4-12b',
-        name: 'Llama Guard 4 12B',
-        capabilities: ['image_input']
-    },
+
     {
         id: 'openai/gpt-oss-120b',
         name: 'GPT OSS 120B',

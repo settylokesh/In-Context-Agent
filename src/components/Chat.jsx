@@ -10,8 +10,8 @@ const Chat = ({ apiKey }) => {
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [availableModels, setAvailableModels] = useState(LOCAL_MODELS);
-    const [selectedModel, setSelectedModel] = useState(LOCAL_MODELS[0]?.id || '');
-    const [includeContext, setIncludeContext] = useState(false);
+    const [selectedModel, setSelectedModel] = useState('openai/gpt-oss-120b');
+    const [includeContext, setIncludeContext] = useState(true);
     const [responseLength, setResponseLength] = useState('medium');
     const [attachedImage, setAttachedImage] = useState(null);
     const [activeTools, setActiveTools] = useState({});
@@ -47,7 +47,7 @@ const Chat = ({ apiKey }) => {
 
     useEffect(() => {
         if (availableModels.length > 0 && !selectedModel) {
-            const defaultModel = availableModels.find(m => m.id === 'llama-3.1-8b-instant') || availableModels[0];
+            const defaultModel = availableModels.find(m => m.id === 'openai/gpt-oss-120b') || availableModels[0];
             setSelectedModel(defaultModel.id);
         }
     }, [availableModels, selectedModel]);
