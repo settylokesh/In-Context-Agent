@@ -46,8 +46,8 @@ The **Context Toggle** gives you full control over when the AI reads your curren
 
 1.  **Clone the Repository**
     ```bash
-    git clone <repository-url>
-    cd in-context-agent
+    git clone https://github.com/settylokesh/In-Context-Agent.git
+    cd In-Context-Agent
     ```
 
 2.  **Install Dependencies**
