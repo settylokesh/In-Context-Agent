@@ -10,11 +10,10 @@ const Chat = ({ apiKey }) => {
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [availableModels, setAvailableModels] = useState(LOCAL_MODELS);
-    const [selectedModel, setSelectedModel] = useState(LOCAL_MODELS[0]?.id || '');
-    const [includeContext, setIncludeContext] = useState(false);
+    const [selectedModel, setSelectedModel] = useState('openai/gpt-oss-120b');
+    const [includeContext, setIncludeContext] = useState(true);
     const [responseLength, setResponseLength] = useState('medium');
     const [attachedImage, setAttachedImage] = useState(null);
-    const [activeTools, setActiveTools] = useState({});
 
     // New State
     const [currentConversationId, setConversationId] = useState(null);
@@ -47,22 +46,13 @@ const Chat = ({ apiKey }) => {
 
     useEffect(() => {
         if (availableModels.length > 0 && !selectedModel) {
-            const defaultModel = availableModels.find(m => m.id === 'llama-3.1-8b-instant') || availableModels[0];
+            const defaultModel = availableModels.find(m => m.id === 'openai/gpt-oss-120b') || availableModels[0];
             setSelectedModel(defaultModel.id);
         }
     }, [availableModels, selectedModel]);
 
     useEffect(() => {
         setAttachedImage(null);
-        setActiveTools({});
-        const model = availableModels.find(m => m.id === selectedModel);
-        if (model) {
-            const initialTools = {};
-            model.capabilities.forEach(cap => {
-                if (cap !== 'image_input') initialTools[cap] = false;
-            });
-            setActiveTools(initialTools);
-        }
     }, [selectedModel, availableModels]);
 
     // Save conversation whenever messages change
@@ -194,9 +184,6 @@ const Chat = ({ apiKey }) => {
         }
     };
 
-    const toggleTool = (tool) => {
-        setActiveTools(prev => ({ ...prev, [tool]: !prev[tool] }));
-    };
 
     const handleSend = async (customInput = null, customContext = null) => {
         const textToSend = customInput || input;
@@ -215,11 +202,6 @@ const Chat = ({ apiKey }) => {
 
         const lengthInstruction = `Keep the response ${responseLength}.`;
 
-        const activeToolNames = Object.keys(activeTools).filter(k => activeTools[k]);
-        const toolInstruction = activeToolNames.length > 0
-            ? `\nYou have the following capabilities enabled: ${activeToolNames.join(', ')}. Use them when appropriate.`
-            : "";
-
         if (includeContext || customContext) {
             const pageContent = await getPageContext();
             if (pageContent) {
@@ -227,7 +209,7 @@ const Chat = ({ apiKey }) => {
                     role: 'system',
                     content: `You are a helpful, concise AI assistant living in a Chrome extension.
 Answer questions based on the provided page context. If the context is irrelevant to the question, use your general knowledge.
-${lengthInstruction}${toolInstruction}
+${lengthInstruction}
 
 Context:
 ${pageContent.substring(0, 10000)}
@@ -237,7 +219,7 @@ ${pageContent.substring(0, 10000)}
         } else {
             contextMsg = {
                 role: 'system',
-                content: `You are a helpful, concise AI assistant living in a Chrome extension. ${lengthInstruction}${toolInstruction}`
+                content: `You are a helpful, concise AI assistant living in a Chrome extension. ${lengthInstruction}`
             };
         }
 
@@ -288,8 +270,6 @@ ${pageContent.substring(0, 10000)}
     };
 
     const currentModel = availableModels.find(m => m.id === selectedModel);
-    const showImageInput = currentModel?.capabilities.includes('image_input');
-    const showTools = currentModel?.capabilities.some(c => c !== 'image_input');
 
     if (showHistory) {
         return (
@@ -368,23 +348,7 @@ ${pageContent.substring(0, 10000)}
                     </div>
                 </div>
 
-                {/* Capabilities Toolbar */}
-                {showTools && (
-                    <div className="flex flex-wrap gap-2 px-4 pb-2">
-                        {Object.keys(activeTools).map(tool => (
-                            <button
-                                key={tool}
-                                onClick={() => toggleTool(tool)}
-                                className={`px-2.5 py-1 rounded-full text-[10px] font-medium transition-all border ${activeTools[tool]
-                                    ? 'bg-black text-white border-black shadow-sm'
-                                    : 'bg-white text-gray-500 border-gray-200 hover:border-gray-300 hover:bg-gray-50'
-                                    }`}
-                            >
-                                {tool.replace(/_/g, ' ')}
-                            </button>
-                        ))}
-                    </div>
-                )}
+
             </div>
 
             {/* Messages */}
@@ -473,44 +437,14 @@ ${pageContent.substring(0, 10000)}
                         value={input}
                         onChange={(e) => setInput(e.target.value)}
                         onKeyDown={handleKeyDown}
-                        onPaste={showImageInput ? handlePaste : undefined}
-                        placeholder={showImageInput ? "Message Groq Comet..." : "Type a message..."}
+                        onPaste={undefined}
+                        placeholder="Type a message..."
                         className="w-full bg-transparent border-none rounded-2xl p-3 pr-24 resize-none focus:ring-0 text-sm max-h-32 placeholder:text-gray-400"
                         rows="1"
                         style={{ minHeight: '48px' }}
                     />
 
                     <div className="absolute right-2 bottom-2 flex items-center gap-1">
-                        {showImageInput && (
-                            <>
-                                <input
-                                    type="file"
-                                    accept="image/*"
-                                    className="hidden"
-                                    ref={fileInputRef}
-                                    onChange={handleImageUpload}
-                                />
-                                <button
-                                    onClick={() => fileInputRef.current?.click()}
-                                    className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-                                    title="Upload Image"
-                                >
-                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
-                                    </svg>
-                                </button>
-                                <button
-                                    onClick={handleScreenshot}
-                                    className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-                                    title="Take Screenshot"
-                                >
-                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM18.75 10.5h.008v.008h-.008V10.5z" />
-                                    </svg>
-                                </button>
-                            </>
-                        )}
                         <button
                             onClick={() => handleSend()}
                             disabled={isLoading || (!input.trim() && !attachedImage)}
