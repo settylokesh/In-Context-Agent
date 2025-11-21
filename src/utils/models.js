@@ -1,33 +1,27 @@
 export const MODELS = [
     {
         id: 'llama-3.1-8b-instant',
-        name: 'Llama 3.1 8B Instant',
-        capabilities: []
+        name: 'Llama 3.1 8B Instant'
     },
     {
         id: 'llama-3.3-70b-versatile',
-        name: 'Llama 3.3 70B Versatile',
-        capabilities: []
+        name: 'Llama 3.3 70B Versatile'
     },
 
     {
         id: 'openai/gpt-oss-120b',
-        name: 'GPT OSS 120B',
-        capabilities: []
+        name: 'GPT OSS 120B'
     },
     {
         id: 'openai/gpt-oss-20b',
-        name: 'GPT OSS 20B',
-        capabilities: []
+        name: 'GPT OSS 20B'
     },
     {
         id: 'groq/compound',
-        name: 'Groq Compound',
-        capabilities: ['web_search', 'code_execution', 'visit_website', 'browser_automation', 'wolfram_alpha', 'json_object_mode']
+        name: 'Groq Compound'
     },
     {
         id: 'groq/compound-mini',
-        name: 'Groq Compound Mini',
-        capabilities: ['web_search', 'code_execution', 'visit_website', 'browser_automation', 'wolfram_alpha', 'json_object_mode']
+        name: 'Groq Compound Mini'
     }
 ];
