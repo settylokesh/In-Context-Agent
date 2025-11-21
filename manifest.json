@@ -1,0 +1,40 @@
+{
+    "manifest_version": 3,
+    "name": "In-Context Agent",
+    "version": "1.0.0",
+    "description": "AI-powered browser assistant using Groq API",
+    "permissions": [
+        "sidePanel",
+        "activeTab",
+        "scripting",
+        "storage"
+    ],
+    "host_permissions": [
+        "<all_urls>"
+    ],
+    "side_panel": {
+        "default_path": "src/sidepanel/index.html"
+    },
+    "background": {
+        "service_worker": "src/background/index.js",
+        "type": "module"
+    },
+    "content_scripts": [
+        {
+            "matches": [
+                "<all_urls>"
+            ],
+            "js": [
+                "src/content/index.js"
+            ]
+        }
+    ],
+    "action": {
+        "default_title": "Open In-Context Agent"
+    },
+    "icons": {
+        "16": "icons/icon16.png",
+        "48": "icons/icon48.png",
+        "128": "icons/icon128.png"
+    }
+}
