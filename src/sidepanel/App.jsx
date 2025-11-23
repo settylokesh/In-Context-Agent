@@ -5,12 +5,14 @@ import logo from '../assets/logo.png';
 function App() {
     const [apiKey, setApiKey] = useState('');
     const [hasKey, setHasKey] = useState(false);
+    const [hasSavedKey, setHasSavedKey] = useState(false);
 
     useEffect(() => {
         chrome.storage.local.get(['groqApiKey'], (result) => {
             if (result.groqApiKey) {
                 setApiKey(result.groqApiKey);
                 setHasKey(true);
+                setHasSavedKey(true);
             }
         });
     }, []);
@@ -18,24 +20,45 @@ function App() {
     const saveKey = () => {
         chrome.storage.local.set({ groqApiKey: apiKey }, () => {
             setHasKey(true);
+            setHasSavedKey(true);
+        });
+    };
+
+    const handleBack = () => {
+        chrome.storage.local.get(['groqApiKey'], (result) => {
+            if (result.groqApiKey) {
+                setApiKey(result.groqApiKey);
+                setHasKey(true);
+            }
         });
     };
 
     if (!hasKey) {
         return (
-            <div className="flex items-center justify-center h-screen bg-gray-50">
+            <div className="flex items-center justify-center h-screen bg-gray-50 relative">
+                {hasSavedKey && (
+                    <button
+                        onClick={handleBack}
+                        className="absolute top-4 left-4 p-2 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+                        title="Back"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
+                        </svg>
+                    </button>
+                )}
                 <div className="w-full max-w-xs p-8 bg-white rounded-2xl shadow-xl border border-gray-100">
                     <div className="flex flex-col items-center mb-6">
                         <div className="w-16 h-16 mb-4 flex items-center justify-center">
                             <img src={logo} alt="In-Context Agent Logo" className="w-full h-full object-contain drop-shadow-md" />
                         </div>
                         <h1 className="text-xl font-bold text-gray-900 tracking-tight">In-Context Agent</h1>
-                        <p className="text-xs text-gray-500 mt-1">Enter your API Key to continue</p>
+                        <p className="text-xs text-gray-500 mt-1">Enter your Groq API Key to continue</p>
                     </div>
 
                     <div className="space-y-4">
                         <div>
-                            <label className="block text-xs font-medium text-gray-700 mb-1 ml-1">API Key</label>
+                            <label className="block text-xs font-medium text-gray-700 mb-1 ml-1">Groq API Key</label>
                             <input
                                 type="password"
                                 value={apiKey}
@@ -43,6 +66,14 @@ function App() {
                                 className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-black/5 focus:border-black transition-all placeholder:text-gray-400"
                                 placeholder="gsk_..."
                             />
+                            <a
+                                href="https://console.groq.com/keys"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="block text-[10px] text-blue-500 hover:text-blue-600 mt-1.5 ml-1 text-right"
+                            >
+                                Get your API key here &rarr;
+                            </a>
                         </div>
                         <button
                             onClick={saveKey}
