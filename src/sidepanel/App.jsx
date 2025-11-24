@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Chat from '../components/Chat';
 import logo from '../assets/logo.png';
+import { getApiKey, saveApiKey } from '../utils/storage';
 
 function App() {
     const [apiKey, setApiKey] = useState('');
@@ -8,37 +9,38 @@ function App() {
     const [hasSavedKey, setHasSavedKey] = useState(false);
 
     useEffect(() => {
-        chrome.storage.local.get(['groqApiKey'], (result) => {
-            if (result.groqApiKey) {
-                setApiKey(result.groqApiKey);
+        const loadKey = async () => {
+            const key = await getApiKey();
+            if (key) {
+                setApiKey(key);
                 setHasKey(true);
                 setHasSavedKey(true);
             }
-        });
+        };
+        loadKey();
     }, []);
 
-    const saveKey = () => {
-        chrome.storage.local.set({ groqApiKey: apiKey }, () => {
-            setHasKey(true);
-            setHasSavedKey(true);
-        });
+    const handleSaveKey = async () => {
+        if (!apiKey.trim()) return;
+        await saveApiKey(apiKey);
+        setHasKey(true);
+        setHasSavedKey(true);
     };
 
-    const handleBack = () => {
-        chrome.storage.local.get(['groqApiKey'], (result) => {
-            if (result.groqApiKey) {
-                setApiKey(result.groqApiKey);
-                setHasKey(true);
-            }
-        });
+    const handleCloseSettings = async () => {
+        const key = await getApiKey();
+        if (key) {
+            setApiKey(key);
+            setHasKey(true);
+        }
     };
 
     if (!hasKey) {
         return (
-            <div className="flex items-center justify-center h-screen bg-gray-50 relative">
+            <div className="flex items-center justify-center h-dvh bg-gray-50 relative p-4">
                 {hasSavedKey && (
                     <button
-                        onClick={handleBack}
+                        onClick={handleCloseSettings}
                         className="absolute top-4 left-4 p-2 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
                         title="Back"
                     >
@@ -47,7 +49,7 @@ function App() {
                         </svg>
                     </button>
                 )}
-                <div className="w-full max-w-xs p-8 bg-white rounded-2xl shadow-xl border border-gray-100">
+                <div className="w-full max-w-md p-8 bg-white rounded-2xl shadow-xl border border-gray-100 mx-auto">
                     <div className="flex flex-col items-center mb-6">
                         <div className="w-16 h-16 mb-4 flex items-center justify-center">
                             <img src={logo} alt="In-Context Agent Logo" className="w-full h-full object-contain drop-shadow-md" />
@@ -76,7 +78,7 @@ function App() {
                             </a>
                         </div>
                         <button
-                            onClick={saveKey}
+                            onClick={handleSaveKey}
                             disabled={!apiKey.trim()}
                             className="w-full bg-black text-white py-2.5 rounded-xl text-sm font-medium hover:bg-gray-900 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-black/20"
                         >
@@ -92,7 +94,7 @@ function App() {
     }
 
     return (
-        <div className="h-screen flex flex-col bg-white font-sans">
+        <div className="h-dvh flex flex-col bg-white font-sans">
             <header className="h-14 px-4 border-b border-gray-100 flex justify-between items-center bg-white/80 backdrop-blur-md sticky top-0 z-20">
                 <div className="flex items-center gap-2">
                     <div className="w-8 h-8 flex items-center justify-center">

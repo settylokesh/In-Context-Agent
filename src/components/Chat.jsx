@@ -200,7 +200,13 @@ const Chat = ({ apiKey }) => {
         const userMsg = { role: 'user', content: userContent };
         let contextMsg = null;
 
-        const lengthInstruction = `Keep the response ${responseLength}.`;
+        const lengthInstructions = {
+            short: "Provide a concise and direct answer. Focus only on the most important information.",
+            medium: "Provide a balanced explanation. Include necessary details but avoid excessive elaboration.",
+            long: "Provide a comprehensive and detailed response. Cover all relevant aspects and provide in-depth analysis where appropriate."
+        };
+
+        const lengthInstruction = lengthInstructions[responseLength] || lengthInstructions.medium;
 
         if (includeContext || customContext) {
             const pageContent = await getPageContext();
@@ -233,10 +239,45 @@ ${pageContent.substring(0, 10000)}
 
         try {
             const messagesToSend = contextMsg ? [contextMsg, ...newMessages] : newMessages;
-            const response = await chatCompletion(apiKey, selectedModel, messagesToSend);
-            setMessages(prev => [...prev, response]);
+
+            // Add empty assistant message for streaming
+            setMessages(prev => [...prev, { role: 'assistant', content: '' }]);
+
+            const response = await chatCompletion(apiKey, selectedModel, messagesToSend, (chunk) => {
+                setMessages(prev => {
+                    const lastMsg = prev[prev.length - 1];
+                    if (lastMsg.role === 'assistant') {
+                        return [
+                            ...prev.slice(0, -1),
+                            { ...lastMsg, content: lastMsg.content + chunk }
+                        ];
+                    }
+                    return prev;
+                });
+            });
+
+            // Ensure final state is consistent (though onChunk updates should have handled it)
+            setMessages(prev => {
+                const lastMsg = prev[prev.length - 1];
+                // Only replace if the content is significantly different or if we want to ensure the final object is clean
+                // But for streaming, the accumulated state is usually correct.
+                // We might just want to ensure the final message object is exactly what we expect.
+                return [
+                    ...prev.slice(0, -1),
+                    response // response is the full message object returned by chatCompletion
+                ];
+            });
+
         } catch (error) {
-            setMessages(prev => [...prev, { role: 'assistant', content: `Error: ${error.message}` }]);
+            setMessages(prev => {
+                // Remove the empty assistant message if it exists and replace with error
+                const lastMsg = prev[prev.length - 1];
+                if (lastMsg.role === 'assistant' && lastMsg.content === '') {
+                    return [...prev.slice(0, -1), { role: 'assistant', content: `Error: ${error.message}` }];
+                }
+                // Or just append error
+                return [...prev, { role: 'assistant', content: `Error: ${error.message}` }];
+            });
         } finally {
             setIsLoading(false);
         }
@@ -288,7 +329,7 @@ ${pageContent.substring(0, 10000)}
         <div className="flex flex-col h-full bg-slate-50">
             {/* Toolbar */}
             <div className="flex flex-col border-b border-gray-200 bg-white/80 backdrop-blur-sm z-10">
-                <div className="flex items-center justify-between px-4 py-2">
+                <div className="flex flex-wrap items-center justify-between px-4 py-2 gap-2">
                     <div className="flex items-center gap-2">
                         <button
                             onClick={() => setShowHistory(true)}
@@ -323,7 +364,7 @@ ${pageContent.substring(0, 10000)}
                             </div>
                         </div>
                     </div>
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 ml-auto">
                         <select
                             value={responseLength}
                             onChange={(e) => setResponseLength(e.target.value)}
@@ -441,7 +482,7 @@ ${pageContent.substring(0, 10000)}
                         placeholder="Type a message..."
                         className="w-full bg-transparent border-none rounded-2xl p-3 pr-24 resize-none focus:ring-0 text-sm max-h-32 placeholder:text-gray-400"
                         rows="1"
-                        style={{ minHeight: '48px' }}
+                        style={{ minHeight: '48px', maxHeight: '20vh' }}
                     />
 
                     <div className="absolute right-2 bottom-2 flex items-center gap-1">
