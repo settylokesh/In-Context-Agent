@@ -200,7 +200,13 @@ const Chat = ({ apiKey }) => {
         const userMsg = { role: 'user', content: userContent };
         let contextMsg = null;
 
-        const lengthInstruction = `Keep the response ${responseLength}.`;
+        const lengthInstructions = {
+            short: "Provide a concise and direct answer. Focus only on the most important information.",
+            medium: "Provide a balanced explanation. Include necessary details but avoid excessive elaboration.",
+            long: "Provide a comprehensive and detailed response. Cover all relevant aspects and provide in-depth analysis where appropriate."
+        };
+
+        const lengthInstruction = lengthInstructions[responseLength] || lengthInstructions.medium;
 
         if (includeContext || customContext) {
             const pageContent = await getPageContext();
@@ -233,10 +239,45 @@ ${pageContent.substring(0, 10000)}
 
         try {
             const messagesToSend = contextMsg ? [contextMsg, ...newMessages] : newMessages;
-            const response = await chatCompletion(apiKey, selectedModel, messagesToSend);
-            setMessages(prev => [...prev, response]);
+
+            // Add empty assistant message for streaming
+            setMessages(prev => [...prev, { role: 'assistant', content: '' }]);
+
+            const response = await chatCompletion(apiKey, selectedModel, messagesToSend, (chunk) => {
+                setMessages(prev => {
+                    const lastMsg = prev[prev.length - 1];
+                    if (lastMsg.role === 'assistant') {
+                        return [
+                            ...prev.slice(0, -1),
+                            { ...lastMsg, content: lastMsg.content + chunk }
+                        ];
+                    }
+                    return prev;
+                });
+            });
+
+            // Ensure final state is consistent (though onChunk updates should have handled it)
+            setMessages(prev => {
+                const lastMsg = prev[prev.length - 1];
+                // Only replace if the content is significantly different or if we want to ensure the final object is clean
+                // But for streaming, the accumulated state is usually correct.
+                // We might just want to ensure the final message object is exactly what we expect.
+                return [
+                    ...prev.slice(0, -1),
+                    response // response is the full message object returned by chatCompletion
+                ];
+            });
+
         } catch (error) {
-            setMessages(prev => [...prev, { role: 'assistant', content: `Error: ${error.message}` }]);
+            setMessages(prev => {
+                // Remove the empty assistant message if it exists and replace with error
+                const lastMsg = prev[prev.length - 1];
+                if (lastMsg.role === 'assistant' && lastMsg.content === '') {
+                    return [...prev.slice(0, -1), { role: 'assistant', content: `Error: ${error.message}` }];
+                }
+                // Or just append error
+                return [...prev, { role: 'assistant', content: `Error: ${error.message}` }];
+            });
         } finally {
             setIsLoading(false);
         }

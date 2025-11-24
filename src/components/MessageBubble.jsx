@@ -1,6 +1,8 @@
 import React from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
 const MessageBubble = ({ role, content }) => {
     const isUser = role === 'user';
@@ -36,7 +38,35 @@ const MessageBubble = ({ role, content }) => {
                     <img src={imageUrl} alt="User uploaded" className="rounded-lg mb-2 max-h-48 w-auto border border-white/20" />
                 )}
                 <div className={`prose prose-sm max-w-none ${isUser ? 'prose-invert' : ''} prose-p:my-1 prose-headings:my-2 prose-ul:my-1 prose-ol:my-1`}>
-                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{textContent}</ReactMarkdown>
+                    <ReactMarkdown
+                        remarkPlugins={[remarkGfm]}
+                        components={{
+                            code({ node, inline, className, children, ...props }) {
+                                const match = /language-(\w+)/.exec(className || '');
+                                return !inline && match ? (
+                                    <SyntaxHighlighter
+                                        {...props}
+                                        style={vscDarkPlus}
+                                        language={match[1]}
+                                        PreTag="div"
+                                        customStyle={{
+                                            margin: 0,
+                                            borderRadius: '0.5rem',
+                                            fontSize: '0.85em',
+                                        }}
+                                    >
+                                        {String(children).replace(/\n$/, '')}
+                                    </SyntaxHighlighter>
+                                ) : (
+                                    <code {...props} className={className}>
+                                        {children}
+                                    </code>
+                                );
+                            }
+                        }}
+                    >
+                        {textContent}
+                    </ReactMarkdown>
                 </div>
             </div>
         </div>
