@@ -4,7 +4,17 @@
 
 const STORAGE_KEYS = {
     CONVERSATIONS: 'groq_conversations',
-    CURRENT_CONVERSATION_ID: 'groq_current_conversation_id'
+    CURRENT_CONVERSATION_ID: 'groq_current_conversation_id',
+    API_KEY: 'groqApiKey'
+};
+
+export const getApiKey = async () => {
+    const result = await chrome.storage.local.get(STORAGE_KEYS.API_KEY);
+    return result[STORAGE_KEYS.API_KEY];
+};
+
+export const saveApiKey = async (apiKey) => {
+    await chrome.storage.local.set({ [STORAGE_KEYS.API_KEY]: apiKey });
 };
 
 export const getConversations = async () => {

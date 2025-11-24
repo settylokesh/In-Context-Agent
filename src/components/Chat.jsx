@@ -329,7 +329,7 @@ ${pageContent.substring(0, 10000)}
         <div className="flex flex-col h-full bg-slate-50">
             {/* Toolbar */}
             <div className="flex flex-col border-b border-gray-200 bg-white/80 backdrop-blur-sm z-10">
-                <div className="flex items-center justify-between px-4 py-2">
+                <div className="flex flex-wrap items-center justify-between px-4 py-2 gap-2">
                     <div className="flex items-center gap-2">
                         <button
                             onClick={() => setShowHistory(true)}
@@ -364,7 +364,7 @@ ${pageContent.substring(0, 10000)}
                             </div>
                         </div>
                     </div>
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 ml-auto">
                         <select
                             value={responseLength}
                             onChange={(e) => setResponseLength(e.target.value)}
@@ -482,7 +482,7 @@ ${pageContent.substring(0, 10000)}
                         placeholder="Type a message..."
                         className="w-full bg-transparent border-none rounded-2xl p-3 pr-24 resize-none focus:ring-0 text-sm max-h-32 placeholder:text-gray-400"
                         rows="1"
-                        style={{ minHeight: '48px' }}
+                        style={{ minHeight: '48px', maxHeight: '20vh' }}
                     />
 
                     <div className="absolute right-2 bottom-2 flex items-center gap-1">
